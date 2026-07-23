@@ -8,11 +8,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Enable Corepack
         run: corepack enable
@@ -22,28 +28,69 @@ jobs:
           node-version: 20
           cache: yarn
 
+      - name: Determine version
+        id: version
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+
+          if [ -z "$LAST_TAG" ]; then
+            # First release: use the version already in manifest.json, no bump.
+            echo "version=$(jq -r .version manifest.json)" >> "$GITHUB_OUTPUT"
+            echo "bump=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$(git rev-parse "$LAST_TAG")" = "$(git rev-parse HEAD)" ]; then
+            # HEAD is already tagged and released; nothing to do.
+            echo "version=" >> "$GITHUB_OUTPUT"
+            echo "bump=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SUBJECTS=$(git log "$LAST_TAG"..HEAD --pretty=%s)
+          BODIES=$(git log "$LAST_TAG"..HEAD --pretty=%b)
+
+          BUMP=patch
+          if echo "$SUBJECTS" | grep -qE '^[a-z]+(\(.+\))?!:' || echo "$BODIES" | grep -q 'BREAKING CHANGE'; then
+            BUMP=major
+          elif echo "$SUBJECTS" | grep -qE '^feat(\(.+\))?:'; then
+            BUMP=minor
+          fi
+
+          IFS=. read -r MAJ MIN PAT <<< "$LAST_TAG"
+          case $BUMP in
+            major) VERSION=$((MAJ + 1)).0.0 ;;
+            minor) VERSION=$MAJ.$((MIN + 1)).0 ;;
+            patch) VERSION=$MAJ.$MIN.$((PAT + 1)) ;;
+          esac
+
+          echo "Bumping $LAST_TAG -> $VERSION ($BUMP)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "bump=true" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version
+        if: steps.version.outputs.bump == 'true'
+        run: |
+          node version-bump.mjs "${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: release ${{ steps.version.outputs.version }}"
+          git push
+
+      - name: Tag release
+        if: steps.version.outputs.version != ''
+        run: |
+          git tag "${{ steps.version.outputs.version }}"
+          git push origin "${{ steps.version.outputs.version }}"
+
       - name: Build
+        if: steps.version.outputs.version != ''
         run: |
           yarn install --immutable
           yarn build
 
-      - name: Read version
-        id: version
-        run: echo "version=$(jq -r .version manifest.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Check if release exists
-        id: check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if gh release view "${{ steps.version.outputs.version }}" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Create release
-        if: steps.check.outputs.exists == 'false'
+        if: steps.version.outputs.version != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
