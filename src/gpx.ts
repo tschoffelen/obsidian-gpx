@@ -83,26 +83,52 @@ export function parseGpx(xml: string): GpxData {
 	return { name, points, stats: computeStats(points) };
 }
 
-const MOVING_THRESHOLD = 0.3; // m/s, ~1 km/h
+const MOVING_THRESHOLD = 0.3; // m/s — below this a segment counts as stationary
+// Stationary runs shorter than this still count as moving time. Tuned against
+// Apple Workouts reference data: Apple's auto-pause only excludes long stops
+// (multi-minute breaks), not slow shuffling or brief halts.
+const PAUSE_MIN_DURATION = 180; // s
 
-function computeStats(points: GpxPoint[]): GpxStats {
+/**
+ * Distance and moving time mirror Apple's workout semantics: GPS jitter
+ * while standing still adds no distance, and only sustained stops (auto
+ * pause) are excluded from moving time — brief lulls still count.
+ */
+export function computeStats(points: GpxPoint[]): GpxStats {
 	let distance = 0;
 	let movingTime = 0;
 	let maxSpeed = 0;
 
-	const cumulative: number[] = [0];
+	let pauseRun = 0; // seconds of consecutive stationary segments
+	const endPauseRun = () => {
+		if (pauseRun > 0 && pauseRun < PAUSE_MIN_DURATION) movingTime += pauseRun;
+		pauseRun = 0;
+	};
+
+	const cumulative: number[] = [0]; // raw track distance, for max speed only
+	let rawDistance = 0;
 	for (let i = 1; i < points.length; i++) {
 		const d = haversine(points[i - 1], points[i]);
-		distance += d;
-		cumulative.push(distance);
+		rawDistance += d;
+		cumulative.push(rawDistance);
 
 		const t0 = points[i - 1].time;
 		const t1 = points[i].time;
 		if (t0 !== undefined && t1 !== undefined && t1 > t0) {
 			const dt = (t1 - t0) / 1000;
-			if (d / dt > MOVING_THRESHOLD) movingTime += dt;
+			if (d / dt >= MOVING_THRESHOLD) {
+				endPauseRun();
+				distance += d;
+				movingTime += dt;
+			} else {
+				pauseRun += dt;
+			}
+		} else {
+			// No usable timestamps: count all distance.
+			distance += d;
 		}
 	}
+	endPauseRun();
 
 	// Max speed over a small window to smooth out GPS jitter.
 	const window = Math.min(3, points.length - 1);
@@ -125,7 +151,8 @@ function computeStats(points: GpxPoint[]): GpxStats {
 	if (duration) {
 		stats.duration = duration;
 		stats.movingTime = movingTime || undefined;
-		stats.avgSpeed = distance / duration;
+		// Average speed/pace over moving time, like fitness apps report it.
+		stats.avgSpeed = distance / (movingTime || duration);
 		stats.maxSpeed = maxSpeed || undefined;
 		stats.startTime = first?.time;
 	}
@@ -153,10 +180,19 @@ function elevationGain(points: GpxPoint[]): number | undefined {
 		smoothed.push(sum / n);
 	}
 
+	// Hysteresis deadband: only rises of at least this size count, so noise
+	// oscillating around a level doesn't accumulate into fake climb.
+	const DEADBAND = 0.5;
 	let gain = 0;
+	let ref = smoothed[0];
 	for (let i = 1; i < smoothed.length; i++) {
-		const delta = smoothed[i] - smoothed[i - 1];
-		if (delta > 0) gain += delta;
+		const e = smoothed[i];
+		if (e - ref >= DEADBAND) {
+			gain += e - ref;
+			ref = e;
+		} else if (e < ref) {
+			ref = e;
+		}
 	}
 	return Math.round(gain);
 }
