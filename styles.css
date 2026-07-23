@@ -1,0 +1,163 @@
+/* GPX Preview */
+
+.gpx-preview-embed {
+	display: block;
+	width: 100%;
+}
+
+.gpx-preview-card {
+	display: block;
+	max-width: 640px;
+	margin: 0.5rem 0;
+	border-radius: 20px;
+	overflow: hidden;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.04),
+		0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.theme-dark .gpx-preview-card {
+	background: var(--background-secondary);
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.2),
+		0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ---- Map ---- */
+
+.gpx-preview-map {
+	position: relative;
+	aspect-ratio: 2 / 1;
+	background: var(--background-secondary-alt);
+	overflow: hidden;
+}
+
+.gpx-preview-map.is-loading::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		100deg,
+		transparent 30%,
+		var(--background-modifier-hover) 50%,
+		transparent 70%
+	);
+	background-size: 200% 100%;
+	animation: gpx-preview-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes gpx-preview-shimmer {
+	from {
+		background-position: 180% 0;
+	}
+	to {
+		background-position: -80% 0;
+	}
+}
+
+.gpx-preview-map-img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 0 !important;
+}
+
+/* ---- Errors ---- */
+
+.gpx-preview-map.has-error {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.gpx-preview-error {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 16px 24px;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.gpx-preview-error-icon svg {
+	width: 28px;
+	height: 28px;
+	opacity: 0.6;
+}
+
+.gpx-preview-error-text {
+	font-size: 0.85em;
+	max-width: 34em;
+}
+
+/* ---- Title + stats ---- */
+
+.gpx-preview-info {
+	padding: 14px 20px 16px;
+}
+
+.gpx-preview-title {
+	font-size: 1.05em;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--text-normal);
+	margin-bottom: 2px;
+}
+
+.gpx-preview-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 28px;
+	margin-top: 8px;
+}
+
+.gpx-preview-title + .gpx-preview-stats {
+	margin-top: 10px;
+}
+
+.gpx-preview-stat-value {
+	font-size: 1.3em;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+	color: var(--text-normal);
+	line-height: 1.25;
+}
+
+.gpx-preview-stat-label {
+	font-size: 0.68em;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+	margin-top: 1px;
+}
+
+/* ---- Standalone file view ---- */
+
+.gpx-preview-view-wrapper {
+	max-width: 680px;
+	margin: 24px auto;
+	padding: 0 16px;
+}
+
+.gpx-preview-view-wrapper .gpx-preview-card {
+	max-width: none;
+}
+
+/* ---- Settings ---- */
+
+.gpx-preview-settings-note {
+	margin: 0.25em 0 0.75em;
+}
+
+.gpx-preview-settings-key {
+	width: 100%;
+	min-width: 300px;
+	font-family: var(--font-monospace);
+	font-size: 0.8em;
+}

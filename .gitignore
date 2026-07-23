@@ -1,0 +1,7 @@
+node_modules
+main.js
+.yarn/
+*.map
+.DS_Store
+cache/
+data.json

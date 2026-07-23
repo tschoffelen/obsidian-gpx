@@ -1,0 +1,27 @@
+{
+  "name": "obsidian-gpx-preview",
+  "version": "1.0.0",
+  "description": "Render Apple-style map previews of GPX files embedded in notes",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+  },
+  "keywords": [
+    "obsidian",
+    "gpx",
+    "map",
+    "workout"
+  ],
+  "author": "Thomas Schoffelen",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.25.0",
+    "obsidian": "^1.8.7",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "yarn@4.17.1"
+}
