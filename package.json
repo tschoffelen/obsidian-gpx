@@ -1,6 +1,6 @@
 {
   "name": "obsidian-gpx-preview",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Render Apple-style map previews of GPX files embedded in notes",
   "main": "main.js",
   "scripts": {
