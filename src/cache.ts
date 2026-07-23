@@ -1,4 +1,38 @@
-import type { Plugin, TFile } from "obsidian";
+import type { App, Plugin, TFile } from "obsidian";
+import { GpxData, parseGpx } from "./gpx";
+
+/**
+ * Length-capped in-memory LRU cache of parsed GPX files, keyed by path +
+ * mtime. Repeat renders (theme flips, settings changes, note re-opens) skip
+ * the file read and XML parse. Deliberately not persisted to disk: the stats
+ * depend on the parsing algorithm, and a disk cache would silently serve
+ * stale numbers after every algorithm tweak.
+ */
+export class GpxDataCache {
+	private entries = new Map<string, GpxData>();
+
+	constructor(private app: App, private capacity = 20) {}
+
+	async get(file: TFile): Promise<GpxData> {
+		const key = `${file.path}:${file.stat.mtime}`;
+		const hit = this.entries.get(key);
+		if (hit) {
+			// Re-insert to mark as most recently used.
+			this.entries.delete(key);
+			this.entries.set(key, hit);
+			return hit;
+		}
+		// Parse errors propagate uncached, so a fixed file re-parses cleanly.
+		const data = parseGpx(await this.app.vault.read(file));
+		this.entries.set(key, data);
+		while (this.entries.size > this.capacity) {
+			const oldest = this.entries.keys().next().value;
+			if (oldest === undefined) break;
+			this.entries.delete(oldest);
+		}
+		return data;
+	}
+}
 
 /**
  * Disk cache for rendered map PNGs, stored inside the plugin's own folder so

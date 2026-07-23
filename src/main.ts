@@ -7,7 +7,7 @@ import {
 	debounce,
 } from "obsidian";
 import { GpxCard } from "./card";
-import { MapCache } from "./cache";
+import { GpxDataCache, MapCache } from "./cache";
 import {
 	DEFAULT_SETTINGS,
 	GpxPreviewSettings,
@@ -19,11 +19,13 @@ const VIEW_TYPE_GPX = "gpx-preview-view";
 export default class GpxPreviewPlugin extends Plugin {
 	settings!: GpxPreviewSettings;
 	cache!: MapCache;
+	gpxData!: GpxDataCache;
 	activeCards = new Set<GpxCard>();
 
 	async onload() {
 		await this.loadSettings();
 		this.cache = new MapCache(this);
+		this.gpxData = new GpxDataCache(this.app);
 		this.addSettingTab(new GpxPreviewSettingTab(this.app, this));
 
 		// A simple view so .gpx files are indexed by the vault and can be

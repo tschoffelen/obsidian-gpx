@@ -1,6 +1,6 @@
 import { MarkdownRenderChild, TFile, setIcon } from "obsidian";
 import type GpxPreviewPlugin from "./main";
-import { GpxData, GpxStats, parseGpx } from "./gpx";
+import { GpxData, GpxStats } from "./gpx";
 import {
 	formatDistance,
 	formatDuration,
@@ -104,7 +104,7 @@ export class GpxCard extends MarkdownRenderChild {
 
 		let data: GpxData;
 		try {
-			data = parseGpx(await this.plugin.app.vault.read(this.file));
+			data = await this.plugin.gpxData.get(this.file);
 		} catch (e) {
 			this.renderError(mapEl, `Could not read GPX file: ${(e as Error).message}`);
 			infoEl.remove();
