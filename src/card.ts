@@ -152,7 +152,7 @@ export class GpxCard extends MarkdownRenderChild {
 			);
 		}
 
-		const variant = `${provider}_${dark ? "dark" : "light"}_${MAP_WIDTH}x${MAP_HEIGHT}v2`;
+		const variant = `${provider}_${dark ? "dark" : "light"}_${MAP_WIDTH}x${MAP_HEIGHT}v3`;
 		const cacheName = this.plugin.cache.name(this.file, variant);
 
 		mapEl.addClass("is-loading");

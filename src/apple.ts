@@ -35,7 +35,7 @@ export async function renderAppleSnapshot(
 	const overlays = [
 		{
 			points: track,
-			strokeColor: opts.dark ? "0A84FF" : "007AFF",
+			strokeColor: "D6AE1E",
 			lineWidth: 3,
 		},
 	];
