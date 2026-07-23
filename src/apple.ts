@@ -70,19 +70,63 @@ export async function renderAppleSnapshot(
 }
 
 async function signES256(data: string, privateKeyPem: string): Promise<string> {
-	const key = await crypto.subtle.importKey(
-		"pkcs8",
-		pemToDer(privateKeyPem),
-		{ name: "ECDSA", namedCurve: "P-256" },
-		false,
-		["sign"]
-	);
+	const key = await importPrivateKey(privateKeyPem);
 	const signature = await crypto.subtle.sign(
 		{ name: "ECDSA", hash: { name: "SHA-256" } },
 		key,
 		new TextEncoder().encode(data)
 	);
 	return base64url(new Uint8Array(signature));
+}
+
+const EC_PARAMS = { name: "ECDSA", namedCurve: "P-256" } as const;
+
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+	const der = new Uint8Array(pemToDer(pem));
+	try {
+		return await crypto.subtle.importKey("pkcs8", der, EC_PARAMS, false, ["sign"]);
+	} catch (e) {
+		// WebKit (Obsidian mobile) rejects Apple's PKCS#8 layout — the inner
+		// ECPrivateKey embeds the optional public key — with a DataError.
+		// Extract the raw key material and import it as a JWK instead.
+		const jwk = pkcs8ToJwk(der);
+		if (!jwk) throw e;
+		return await crypto.subtle.importKey("jwk", jwk, EC_PARAMS, false, ["sign"]);
+	}
+}
+
+/**
+ * Pull the P-256 private scalar and public point out of an Apple .p8 key.
+ * In Apple's DER layout the 32-byte scalar always follows the ECPrivateKey
+ * version marker `02 01 01 04 20`, and the 64-byte uncompressed public point
+ * follows the context-1 BIT STRING header `a1 44 03 42 00 04`.
+ */
+function pkcs8ToJwk(der: Uint8Array): JsonWebKey | null {
+	const d = bytesAfter(der, [0x02, 0x01, 0x01, 0x04, 0x20], 32);
+	const pub = bytesAfter(der, [0xa1, 0x44, 0x03, 0x42, 0x00, 0x04], 64);
+	if (!d || !pub) return null;
+	return {
+		kty: "EC",
+		crv: "P-256",
+		d: base64url(d),
+		x: base64url(pub.slice(0, 32)),
+		y: base64url(pub.slice(32)),
+	};
+}
+
+function bytesAfter(
+	haystack: Uint8Array,
+	pattern: number[],
+	length: number
+): Uint8Array | null {
+	outer: for (let i = 0; i <= haystack.length - pattern.length - length; i++) {
+		for (let j = 0; j < pattern.length; j++) {
+			if (haystack[i + j] !== pattern[j]) continue outer;
+		}
+		const start = i + pattern.length;
+		return haystack.slice(start, start + length);
+	}
+	return null;
 }
 
 function pemToDer(pem: string): ArrayBuffer {

@@ -58,10 +58,12 @@
 	}
 }
 
-.gpx-preview-map-img {
+.gpx-preview-embed .gpx-preview-card img.gpx-preview-map-img {
 	display: block;
-	width: 100%;
-	height: 100%;
+	width: 100% !important;
+	height: 100% !important;
+	max-width: none !important;
+	max-height: none !important;
 	object-fit: cover;
 	border-radius: 0 !important;
 }
