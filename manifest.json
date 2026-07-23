@@ -2,7 +2,7 @@
   "id": "gpx-preview",
   "name": "GPX Preview",
   "version": "1.0.0",
-  "minAppVersion": "1.2.0",
+  "minAppVersion": "1.13.0",
   "description": "Renders Apple-style map previews of embedded GPX files, with workout stats and offline caching.",
   "author": "Thomas Schoffelen",
   "isDesktopOnly": false

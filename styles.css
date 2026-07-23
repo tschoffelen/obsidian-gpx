@@ -1,9 +1,11 @@
 /* GPX Preview */
 
-.gpx-preview-embed {
+/* Doubled class raises specificity above Obsidian's embed defaults
+   without resorting to !important. */
+.gpx-preview-embed.gpx-preview-embed {
   display: block;
   width: 100%;
-  max-width: none !important;
+  max-width: none;
 }
 
 .gpx-preview-card {
@@ -54,14 +56,14 @@
   }
 }
 
-.gpx-preview-embed .gpx-preview-card img.gpx-preview-map-img {
+.gpx-preview-embed.gpx-preview-embed .gpx-preview-card img.gpx-preview-map-img {
   display: block;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
   object-fit: cover;
-  border-radius: 0 !important;
+  border-radius: 0;
 }
 
 /* ---- Errors ---- */
@@ -148,15 +150,3 @@
   max-width: none;
 }
 
-/* ---- Settings ---- */
-
-.gpx-preview-settings-note {
-  margin: 0.25em 0 0.75em;
-}
-
-.gpx-preview-settings-key {
-  width: 100%;
-  min-width: 300px;
-  font-family: var(--font-monospace);
-  font-size: 0.8em;
-}

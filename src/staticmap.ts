@@ -99,7 +99,7 @@ export async function renderStaticMap(
 	const tlx = ((minX + maxX) / 2) * scale - W / 2;
 	const tly = ((minY + maxY) / 2) * scale - H / 2;
 
-	const canvas = document.createElement("canvas");
+	const canvas = createEl("canvas");
 	canvas.width = W * DPR;
 	canvas.height = H * DPR;
 	const ctx = canvas.getContext("2d");

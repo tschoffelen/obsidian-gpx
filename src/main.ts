@@ -16,6 +16,19 @@ import {
 
 const VIEW_TYPE_GPX = "gpx-preview-view";
 
+/**
+ * Obsidian's private embed registry, used by both reading mode and live
+ * preview. Typed here from observed behavior; every access is guarded so a
+ * future rename just drops us into the markdown post-processor fallback.
+ */
+interface EmbedRegistry {
+	registerExtensions?: (
+		extensions: string[],
+		factory: (ctx: { containerEl: HTMLElement }, file: TFile) => Component
+	) => void;
+	unregisterExtensions?: (extensions: string[]) => void;
+}
+
 export default class GpxPreviewPlugin extends Plugin {
 	settings!: GpxPreviewSettings;
 	cache!: MapCache;
@@ -55,14 +68,16 @@ export default class GpxPreviewPlugin extends Plugin {
 	 * post-processor for reading mode if it is unavailable.
 	 */
 	private registerEmbedHandler() {
-		const registry = (this.app as any).embedRegistry;
-		if (registry?.registerExtensions && registry?.unregisterExtensions) {
+		const { embedRegistry: registry } = this.app as typeof this.app & {
+			embedRegistry?: EmbedRegistry;
+		};
+		if (registry?.registerExtensions && registry.unregisterExtensions) {
+			const unregister = registry.unregisterExtensions.bind(registry);
 			registry.registerExtensions(
 				["gpx"],
-				(ctx: { containerEl: HTMLElement }, file: TFile) =>
-					new GpxEmbed(this, ctx.containerEl, file)
+				(ctx, file) => new GpxEmbed(this, ctx.containerEl, file)
 			);
-			this.register(() => registry.unregisterExtensions(["gpx"]));
+			this.register(() => unregister(["gpx"]));
 			return;
 		}
 
@@ -90,7 +105,8 @@ export default class GpxPreviewPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const data = (await this.loadData()) ?? {};
+		const data = ((await this.loadData()) ??
+			{}) as Partial<GpxPreviewSettings>;
 		this.settings = {
 			...DEFAULT_SETTINGS,
 			...data,
