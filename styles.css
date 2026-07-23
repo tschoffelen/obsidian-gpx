@@ -3,6 +3,7 @@
 .gpx-preview-embed {
 	display: block;
 	width: 100%;
+	max-width: none !important;
 }
 
 .gpx-preview-card {

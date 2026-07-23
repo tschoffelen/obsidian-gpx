@@ -159,6 +159,8 @@ export class GpxCard extends MarkdownRenderChild {
 		let png = settings.cacheMaps ? await this.plugin.cache.get(cacheName) : null;
 		let fresh = false;
 
+		let errorMessage = '';
+
 		if (!png) {
 			try {
 				if (useApple) {
@@ -177,6 +179,7 @@ export class GpxCard extends MarkdownRenderChild {
 				}
 				fresh = true;
 			} catch (e) {
+				errorMessage = `Map render failed: ${(e as Error).message}`;
 				console.error("GPX Preview: map render failed", e);
 			}
 		}
@@ -186,7 +189,7 @@ export class GpxCard extends MarkdownRenderChild {
 		if (!png) {
 			this.renderError(
 				mapEl,
-				"Map unavailable — check your connection or map settings."
+				errorMessage || "Map unavailable — check your connection or map settings."
 			);
 			return;
 		}

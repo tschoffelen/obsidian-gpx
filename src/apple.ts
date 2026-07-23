@@ -45,6 +45,7 @@ export async function renderAppleSnapshot(
 	];
 
 	const params = new URLSearchParams({
+		center: "auto",
 		size: `${opts.width}x${opts.height}`,
 		scale: "2",
 		colorScheme: opts.dark ? "dark" : "light",
@@ -58,7 +59,13 @@ export async function renderAppleSnapshot(
 	const signature = await signES256(path, creds.privateKey);
 	const url = `https://snapshot.apple-mapkit.com${path}&signature=${signature}`;
 
-	const res = await requestUrl({ url });
+	const res = await requestUrl({ url, throw: false });
+	const type = res.headers["content-type"] ?? res.headers["Content-Type"] ?? "";
+	if (res.status !== 200 || !type.startsWith("image/")) {
+		throw new Error(
+			`Apple snapshot request failed (${res.status}): ${res.text?.slice(0, 200) || "no details"}`
+		);
+	}
 	return res.arrayBuffer;
 }
 
