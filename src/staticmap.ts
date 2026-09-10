@@ -160,7 +160,7 @@ export async function renderStaticMap(
 	ctx.lineWidth = 8;
 	ctx.stroke();
 
-	ctx.strokeStyle = opts.dark ? "#f0f0f0" : "#0f0f0f";
+	ctx.strokeStyle = opts.dark ? "#a8c7fa" : "#d6ae1e";
 	ctx.lineWidth = 4.5;
 	ctx.stroke();
 
