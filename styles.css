@@ -10,8 +10,8 @@
 
 .gpx-preview-card {
   display: block;
-  max-width: 640px;
   margin: 0.4rem 0;
+  max-width: 720px;
   border-radius: 16px;
   overflow: hidden;
   background: var(--background-primary);
